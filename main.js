@@ -1,6 +1,20 @@
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+import {
+  getDatabase,
+  ref,
+  push,
+  set
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCQd-8YJ2bq19rWQHb5GcHUTY2pYb3ifdo",
   authDomain: "ourschoolapi.firebaseapp.com",
@@ -11,57 +25,82 @@ const firebaseConfig = {
   appId: "1:918668802617:web:b1f339f1a59a5c92666be8"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
 
-const form = document.getElementById("attendanceForm");
-const statusMsg = document.getElementById("statusMsg");
+// DOM Elements
+const loginSection = document.getElementById("loginSection");
+const formSection = document.getElementById("formSection");
+const attendanceForm = document.getElementById("attendanceForm");
+const userEmailInput = document.getElementById("userEmail");
 
-form.addEventListener("submit", async (e) => {
+// Google Sign-In
+window.signIn = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    if (!user.email.endsWith(".com")) {
+      alert("Please login with your university (.edu) email");
+      return;
+    }
+
+    userEmailInput.value = user.email;
+    loginSection.style.display = "none";
+    formSection.style.display = "block";
+  } catch (error) {
+    console.error("Sign-in error:", error.message);
+    alert("Login failed. Try again.");
+  }
+};
+
+// On Auth State Change
+onAuthStateChanged(auth, (user) => {
+  if (user && user.email.endsWith(".com")) {
+    userEmailInput.value = user.email;
+    loginSection.style.display = "none";
+    formSection.style.display = "block";
+  }
+});
+
+// Attendance Submission
+attendanceForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const roll = document.getElementById("roll").value.trim();
-  const batch = document.getElementById("batch").value.trim();
-  const program = document.getElementById("program").value.trim();
   const subject = document.getElementById("subject").value;
+  const email = userEmailInput.value;
+  const name = document.getElementById("name").value.trim();
+  const roll = document.getElementById("roll").value.trim();
+  const batch = document.querySelector('input[name="batch"]:checked').value;
+  const program = document.querySelector('input[name="program"]:checked').value;
+  const timestamp = new Date().toISOString();
 
-  if (!subject) {
-    statusMsg.innerText = "Please select a subject.";
+  if (!subject || !name || !roll) {
+    alert("Please fill out all fields");
     return;
   }
 
-  const today = new Date();
-  const dateStr = today.toISOString().split("T")[0]; // yyyy-mm-dd
-  const timeStr = today.toLocaleTimeString();
+  const attendanceRef = ref(db, `attendance/${subject}`);
+  const newEntryRef = push(attendanceRef);
 
-  const uid = email.replace(/[.@]/g, "_");
-  const attendanceRef = ref(db, `attendance/${subject}/${dateStr}/${uid}`);
-
-  // First check if attendance already exists
-  const snapshot = await get(attendanceRef);
-
-  if (snapshot.exists()) {
-    statusMsg.innerText = "You have already submitted attendance for today.";
-    return;
-  }
-
-  const data = {
-    name,
+  set(newEntryRef, {
     email,
+    name,
     roll,
     batch,
     program,
-    time: timeStr
-  };
-
-  set(attendanceRef, data)
+    timestamp
+  })
     .then(() => {
-      statusMsg.innerText = "Attendance submitted successfully!";
-      form.reset();
+      alert("Attendance recorded successfully");
+      attendanceForm.reset();
+      userEmailInput.value = email; // keep email
     })
     .catch((error) => {
-      statusMsg.innerText = "Error: " + error.message;
+      console.error("Database write failed:", error.message);
+      alert("Failed to submit attendance");
     });
 });
