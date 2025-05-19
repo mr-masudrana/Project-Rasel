@@ -18,18 +18,21 @@
         <option value="Thermodynamics">Thermodynamics</option>
         <option value="Mathematics">Mathematics</option>
         <option value="Physics">Physics</option>
-        <!-- Add more subjects here -->
       </select>
     </div>
     <div class="col-md-4">
       <label>Select Date:</label>
       <input type="date" id="datePicker" class="form-control" />
     </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <button id="downloadCSV" class="btn btn-success w-100">Download CSV</button>
+    </div>
   </div>
 
   <table class="table table-bordered">
     <thead>
       <tr>
+        <th>SL</th>
         <th>Name</th>
         <th>Roll</th>
         <th>Batch</th>
