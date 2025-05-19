@@ -10,9 +10,21 @@
 <body class="container py-4">
   <h2>Admin Dashboard - Attendance Viewer</h2>
 
-  <div class="mb-3">
-    <label>Select Date:</label>
-    <input type="date" id="datePicker" class="form-control" />
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label>Select Subject:</label>
+      <select id="subjectSelect" class="form-select">
+        <option value="EngineeringDynamics">Engineering Dynamics</option>
+        <option value="Thermodynamics">Thermodynamics</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Physics">Physics</option>
+        <!-- Add more subjects here -->
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label>Select Date:</label>
+      <input type="date" id="datePicker" class="form-control" />
+    </div>
   </div>
 
   <table class="table table-bordered">
@@ -29,6 +41,6 @@
     <tbody id="attendanceTable"></tbody>
   </table>
 
-  <script type="module" src="admin.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
