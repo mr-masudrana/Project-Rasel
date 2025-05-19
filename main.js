@@ -89,8 +89,10 @@ attendanceForm.addEventListener("submit", async (e) => {
   }
 
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const time = now.toLocaleTimeString();
+  const bstOffset = 6 * 60; // +6 hours in minutes
+  const localTime = new Date(now.getTime() + bstOffset * 60000);
+  const today = localTime.toISOString().split("T")[0];
+  const time = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const attendanceRef = ref(db, `attendance/${subject}/${today}/${uid}`);
 
   try {
