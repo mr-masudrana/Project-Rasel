@@ -27,7 +27,7 @@ window.signIn = () => {
 
 // Auth state
 onAuthStateChanged(auth, user => {
-  if (user && user.email.endsWith("@student.wub.edu.bd")) {
+  if (user && user.email.endsWith("@gmail.com")) {
     document.getElementById("loginSection").style.display = "none";
     document.getElementById("formSection").style.display = "block";
     document.getElementById("userEmail").innerText = user.email;
