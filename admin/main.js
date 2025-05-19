@@ -18,26 +18,29 @@ const db = getDatabase(app);
 const subjectSelect = document.getElementById("subjectSelect");
 const datePicker = document.getElementById("datePicker");
 const attendanceTable = document.getElementById("attendanceTable");
+const downloadCSVBtn = document.getElementById("downloadCSV");
 
-// Load attendance when subject or date changes
+let currentData = []; // Holds the latest data for CSV
+
 subjectSelect.addEventListener("change", loadAttendance);
 datePicker.addEventListener("change", loadAttendance);
 
 function loadAttendance() {
   const subject = subjectSelect.value;
   const date = datePicker.value;
-
   if (!subject || !date) return;
 
   const attendanceRef = ref(db, `attendance/${subject}/${date}`);
   get(attendanceRef).then(snapshot => {
     attendanceTable.innerHTML = "";
+    currentData = [];
 
     if (snapshot.exists()) {
-      const data = snapshot.val();
-      Object.values(data).forEach(entry => {
+      const data = Object.values(snapshot.val());
+      data.forEach((entry, index) => {
         const row = `
           <tr>
+            <td>${index + 1}</td>
             <td>${entry.name}</td>
             <td>${entry.roll}</td>
             <td>${entry.batch}</td>
@@ -47,11 +50,44 @@ function loadAttendance() {
           </tr>
         `;
         attendanceTable.innerHTML += row;
+
+        currentData.push({
+          SL: index + 1,
+          Name: entry.name,
+          Roll: entry.roll,
+          Batch: entry.batch,
+          Program: entry.program,
+          Email: entry.email,
+          Time: entry.time
+        });
       });
     } else {
-      attendanceTable.innerHTML = `<tr><td colspan="6" class="text-center">No attendance found.</td></tr>`;
+      attendanceTable.innerHTML = `<tr><td colspan="7" class="text-center">No attendance found.</td></tr>`;
     }
-  }).catch(err => {
-    alert("Error: " + err.message);
   });
 }
+
+// CSV Download
+downloadCSVBtn.addEventListener("click", () => {
+  if (currentData.length === 0) {
+    alert("No data to download.");
+    return;
+  }
+
+  const headers = Object.keys(currentData[0]);
+  const csvRows = [
+    headers.join(","),
+    ...currentData.map(row =>
+      headers.map(field => `"${row[field] || ''}"`).join(",")
+    )
+  ];
+  const csvData = csvRows.join("\n");
+  const blob = new Blob([csvData], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `attendance_${subjectSelect.value}_${datePicker.value}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
