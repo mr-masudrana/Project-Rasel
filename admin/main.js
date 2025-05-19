@@ -15,14 +15,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-document.getElementById("datePicker").addEventListener("change", function () {
-  const selectedDate = this.value;
-  if (!selectedDate) return;
+const subjectSelect = document.getElementById("subjectSelect");
+const datePicker = document.getElementById("datePicker");
+const attendanceTable = document.getElementById("attendanceTable");
 
-  const attendanceRef = ref(db, `attendance/EngineeringDynamics/${selectedDate}`);
+// Load attendance when subject or date changes
+subjectSelect.addEventListener("change", loadAttendance);
+datePicker.addEventListener("change", loadAttendance);
+
+function loadAttendance() {
+  const subject = subjectSelect.value;
+  const date = datePicker.value;
+
+  if (!subject || !date) return;
+
+  const attendanceRef = ref(db, `attendance/${subject}/${date}`);
   get(attendanceRef).then(snapshot => {
-    const table = document.getElementById("attendanceTable");
-    table.innerHTML = "";
+    attendanceTable.innerHTML = "";
 
     if (snapshot.exists()) {
       const data = snapshot.val();
@@ -37,10 +46,12 @@ document.getElementById("datePicker").addEventListener("change", function () {
             <td>${entry.time}</td>
           </tr>
         `;
-        table.innerHTML += row;
+        attendanceTable.innerHTML += row;
       });
     } else {
-      table.innerHTML = `<tr><td colspan="6" class="text-center">No attendance found for this date.</td></tr>`;
+      attendanceTable.innerHTML = `<tr><td colspan="6" class="text-center">No attendance found.</td></tr>`;
     }
-  }).catch(err => alert("Error fetching data: " + err));
-});
+  }).catch(err => {
+    alert("Error: " + err.message);
+  });
+}
