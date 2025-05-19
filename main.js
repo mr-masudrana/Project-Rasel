@@ -10,7 +10,7 @@ import {
 import {
   getDatabase,
   ref,
-  push,
+  get,
   set
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
@@ -66,41 +66,60 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Attendance Submission
-attendanceForm.addEventListener("submit", (e) => {
+// Attendance Submission with Duplicate Prevention
+attendanceForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const subject = document.getElementById("subject").value;
-  const email = userEmailInput.value;
   const name = document.getElementById("name").value.trim();
   const roll = document.getElementById("roll").value.trim();
-  const batch = document.querySelector('input[name="batch"]:checked').value;
-  const program = document.querySelector('input[name="program"]:checked').value;
-  const timestamp = new Date().toISOString();
+  const batch = document.querySelector('input[name="batch"]:checked')?.value;
+  const program = document.querySelector('input[name="program"]:checked')?.value;
+  const subject = document.getElementById("subject").value;
+  const email = auth.currentUser.email;
+  const uid = auth.currentUser.uid;
 
-  if (!subject || !name || !roll) {
-    alert("Please fill out all fields");
+  if (!subject) {
+    alert("Please select a subject.");
     return;
   }
 
-  const attendanceRef = ref(db, `attendance/${subject}`);
-  const newEntryRef = push(attendanceRef);
+  if (!name || !roll || !batch || !program) {
+    alert("Please fill in all required fields.");
+    return;
+  }
 
-  set(newEntryRef, {
-    email,
-    name,
-    roll,
-    batch,
-    program,
-    timestamp
-  })
-    .then(() => {
-      alert("Attendance recorded successfully");
-      attendanceForm.reset();
-      userEmailInput.value = email; // keep email
-    })
-    .catch((error) => {
-      console.error("Database write failed:", error.message);
-      alert("Failed to submit attendance");
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const time = now.toLocaleTimeString();
+  const attendanceRef = ref(db, `attendance/${subject}/${today}/${uid}`);
+
+  try {
+    const snapshot = await get(attendanceRef);
+
+    if (snapshot.exists()) {
+      alert("You have already submitted attendance for today.");
+      return;
+    }
+
+    await set(attendanceRef, {
+      name,
+      roll,
+      batch,
+      program,
+      email,
+      timestamp: now.toISOString(),
+      time
     });
+
+    attendanceForm.reset();
+    userEmailInput.value = email;
+    document.getElementById("successMsg").style.display = "block";
+    setTimeout(() => {
+      document.getElementById("successMsg").style.display = "none";
+    }, 5000);
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Failed to submit attendance. Please try again.");
+  }
 });
