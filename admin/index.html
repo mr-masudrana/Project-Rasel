@@ -12,7 +12,7 @@
   <h2 class="text-center text-primary">Admin Dashboard - Attendance Viewer</h2>
 
   <div class="row mb-3">
-    <div class="col-md-4">
+    <div class="col-md-5">
       <label>Select Subject:</label>
       <select id="subjectSelect" class="form-select">
         <option value="EngineeringDynamics">Engineering Dynamics</option>
@@ -21,16 +21,14 @@
         <option value="Physics">Physics</option>
       </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-5">
       <label>Select Date:</label>
       <input type="date" id="datePicker" class="form-control" />
     </div>
-    <div class="col-md-4">
-      <div class="col-md-6 d-flex align-items-start">
-        <button id="downloadPDF" class="btn btn-info w-100">PDF</button>
-      </div>
-      <div class="col-md-6 d-flex align-items-end">
-        <button id="downloadCSV" class="btn btn-success w-100">CSV</button>
+    <div class="col-md-2">
+      <div class="mb-3 d-flex gap-2 text-center">
+        <button id="downloadPDF" class="btn btn-info">PDF</button>
+        <button id="downloadCSV" class="btn btn-success">CSV</button>
       </div>
     </div>
   </div>
