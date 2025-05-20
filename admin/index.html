@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Dashboard - Attendance</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="container py-4">
-  <h2 class="text-center text-primary">Admin Dashboard - Attendance Viewer</h2>
+  <h2 class="text-center text-primary mb-4">Admin Dashboard - Attendance Viewer</h2>
 
   <div class="row mb-3">
     <div class="col-md-5">
@@ -25,16 +27,14 @@
       <label>Select Date:</label>
       <input type="date" id="datePicker" class="form-control" />
     </div>
-    <div class="col-md-2">
-      <div class="mb-3 d-flex gap-2 text-center">
-        <button id="downloadPDF" class="btn btn-info">PDF</button>
-        <button id="downloadCSV" class="btn btn-success">CSV</button>
-      </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button id="downloadPDF" class="btn btn-info me-2 w-50">PDF</button>
+      <button id="downloadCSV" class="btn btn-success w-50">CSV</button>
     </div>
   </div>
 
   <div class="table-responsive">
-    <table class="table table-bordered table-striped">
+    <table class="table table-bordered table-striped" id="attendanceData">
       <thead class="table-light">
         <tr>
           <th>SL</th>
@@ -50,6 +50,122 @@
     </table>
   </div>
 
-  <script type="module" src="main.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQd-8YJ2bq19rWQHb5GcHUTY2pYb3ifdo",
+      authDomain: "ourschoolapi.firebaseapp.com",
+      databaseURL: "https://ourschoolapi-default-rtdb.firebaseio.com",
+      projectId: "ourschoolapi",
+      storageBucket: "ourschoolapi.appspot.com",
+      messagingSenderId: "918668802617",
+      appId: "1:918668802617:web:b1f339f1a59a5c92666be8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const subjectSelect = document.getElementById("subjectSelect");
+    const datePicker = document.getElementById("datePicker");
+    const attendanceTable = document.getElementById("attendanceTable");
+    const downloadCSVBtn = document.getElementById("downloadCSV");
+    const downloadPDFBtn = document.getElementById("downloadPDF");
+
+    let currentData = [];
+
+    subjectSelect.addEventListener("change", loadAttendance);
+    datePicker.addEventListener("change", loadAttendance);
+
+    function loadAttendance() {
+      const subject = subjectSelect.value;
+      const date = datePicker.value;
+      if (!subject || !date) return;
+
+      const attendanceRef = ref(db, `attendance/${subject}/${date}`);
+      get(attendanceRef).then(snapshot => {
+        attendanceTable.innerHTML = "";
+        currentData = [];
+
+        if (snapshot.exists()) {
+          const data = Object.values(snapshot.val());
+          data.forEach((entry, index) => {
+            const row = `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${entry.name}</td>
+                <td>${entry.roll}</td>
+                <td>${entry.batch}</td>
+                <td>${entry.program}</td>
+                <td>${entry.email}</td>
+                <td>${entry.time}</td>
+              </tr>
+            `;
+            attendanceTable.innerHTML += row;
+
+            currentData.push({
+              SL: index + 1,
+              Name: entry.name,
+              Roll: entry.roll,
+              Batch: entry.batch,
+              Program: entry.program,
+              Email: entry.email,
+              Time: entry.time
+            });
+          });
+        } else {
+          attendanceTable.innerHTML = `<tr><td colspan="7" class="text-center text-danger">No attendance found.</td></tr>`;
+        }
+      });
+    }
+
+    // CSV Download
+    downloadCSVBtn.addEventListener("click", () => {
+      if (currentData.length === 0) {
+        alert("No data to download.");
+        return;
+      }
+
+      const headers = Object.keys(currentData[0]);
+      const csvRows = [
+        headers.join(","),
+        ...currentData.map(row =>
+          headers.map(field => `"${row[field] || ''}"`).join(",")
+        )
+      ];
+      const csvData = csvRows.join("\n");
+      const blob = new Blob([csvData], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Attendance_${subjectSelect.value}_${datePicker.value}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // PDF Download
+    downloadPDFBtn.addEventListener("click", () => {
+      if (currentData.length === 0) {
+        alert("No data to download.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.text(`Attendance Report - ${subjectSelect.value} - ${datePicker.value}`, 14, 14);
+      doc.autoTable({
+        head: [["SL", "Name", "Roll", "Batch", "Program", "Email", "Time"]],
+        body: currentData.map(row => [
+          row.SL, row.Name, row.Roll, row.Batch, row.Program, row.Email, row.Time
+        ]),
+        startY: 20
+      });
+
+      doc.save(`Attendance_${subjectSelect.value}_${datePicker.value}.pdf`);
+    });
+  </script>
 </body>
 </html>
