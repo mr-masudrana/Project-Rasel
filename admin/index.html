@@ -3,44 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Dashboard - Attendance</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <title>Admin Dashboard - WUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Trirong&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
-<body>
+<body style="font-family: 'Trirong', serif;">
   <div class="container">
+    
+    <!-- Navbar -->
+    <nav class="navbar navbar-light bg-light rounded shadow-sm">
+      <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand text-uppercase fw-bold" href="#">
+          <img src="https://www.w3schools.com/bootstrap5/img_avatar1.png" alt="" width="40" class="rounded-pill" />
+          World University
+        </a>
+        <button class="btn btn-danger d-none" id="logout">
+          <i class="fa fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </nav>
+    
+    <!-- Header -->
     <div class="row">
-      <h2 class="text-center text-primary mb-4">Admin Dashboard - Attendance Viewer</h2>
+      <h1 class="text-center text-success mt-4 mb-4">Admin Dashboard - Attendance Viewer</h1>
     </div>
 
-    <div class="row mb-3">
-      <div class="col-md-4">
-        <label>Select Subject:</label>
-        <select id="subjectSelect" class="form-select">
-          <option value="EngineeringDynamics">Engineering Dynamics</option>
-          <option value="Thermodynamics">Thermodynamics</option>
-          <option value="Mathematics">Mathematics</option>
-          <option value="Physics">Physics</option>
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label>Select Date:</label>
-        <input type="date" id="datePicker" class="form-control" />
-      </div>
-      <div class="col-md-4 d-flex align-items-end mt-3">
-        <button id="downloadPDF" class="btn btn-info w-50">PDF</button>
-        <button id="downloadExcel" class="btn btn-success mx-2 w-50">Excel</button>
-        <button id="downloadCSV" class="btn btn-warning w-50">CSV</button>
-      </div>
+    <!-- Login Section -->
+    <div class="text-center" id="loginSection">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Admin Login <i class="fas fa-arrow-right"></i></button>
     </div>
-    
-    <!-- Attendance Table -->
-    <div class="row">
-      <div class="table-responsive">
+
+    <!-- Attendance Data -->
+    <div class="row" id="dataSection" style="display: none;">
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label for="subjectSelect" class="form-label">Select Subject:</label>
+          <select id="subjectSelect" class="form-select">
+            <option value="">-- Select Subject --</option>
+            <option value="EngineeringDynamics">Engineering Dynamics</option>
+            <option value="Thermodynamics">Thermodynamics</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Physics">Physics</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="datePicker" class="form-label">Select Date:</label>
+          <input type="date" id="datePicker" class="form-control" />
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button id="downloadPDF" class="btn btn-info w-50"><i class="fas fa-file-pdf"></i> PDF</button>
+          <button id="downloadExcel" class="btn btn-success w-50 mx-3"><i class="fas fa-file-excel"></i> Excel</button>
+          <button id="downloadCSV" class="btn btn-warning w-50"><i class="fas fa-file-csv"></i> CSV</button>
+        </div>
+      </div>
+
+      <!-- Data Section-->
+      <div class="table-responsive shadow-sm bg-white p-3 rounded">
         <table class="table table-bordered table-striped" id="attendanceData">
           <thead class="table-light">
             <tr>
@@ -57,7 +76,43 @@
         </table>
       </div>
     </div>
+    
+    <!-- Sign In Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form id="loginForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="loginModalLabel">Admin Login</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email address:</label>
+                <input type="email" id="email" class="form-control" required />
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" id="password" class="form-control" required />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Sign In</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Your Admin Script -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
