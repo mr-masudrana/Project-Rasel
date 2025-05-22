@@ -4,7 +4,8 @@ import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 import {
@@ -33,7 +34,7 @@ const db = getDatabase(app);
 // DOM Elements
 const loginSection = document.getElementById("loginSection");
 const formSection = document.getElementById("formSection");
-const logout = document.getElementById("logout");
+const logoutBtn = document.getElementById("logout");
 const attendanceForm = document.getElementById("attendanceForm");
 const userEmailInput = document.getElementById("userEmail");
 
@@ -52,27 +53,27 @@ window.signIn = async () => {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
-    logout.style.display = "block";
+    logoutBtn.style.display = "block";
   } catch (error) {
     console.error("Sign-in error:", error.message);
     alert("Login failed. Try again.");
   }
 };
 
-// Sign-out 
+// Logout
 window.logout = () => signOut(auth);
 
-// On Auth State Change
+// On Auth State Changed
 onAuthStateChanged(auth, (user) => {
   if (user && user.email.endsWith(".com")) {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
-    logout.style.display = "block";
+    logoutBtn.style.display = "block";
   }
 });
 
-// Attendance Submission with Duplicate Prevention
+// Attendance Form Submission
 attendanceForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -119,10 +120,19 @@ attendanceForm.addEventListener("submit", async (e) => {
 
     attendanceForm.reset();
     userEmailInput.value = email;
-    document.getElementById("successMsg").style.display = "block";
-    setTimeout(() => {
-      document.getElementById("successMsg").style.display = "none";
-    }, 5000);
+
+    // Fill modal summary
+    document.getElementById("summaryName").textContent = name;
+    document.getElementById("summaryRoll").textContent = roll;
+    document.getElementById("summaryBatch").textContent = batch;
+    document.getElementById("summaryProgram").textContent = program;
+    document.getElementById("summarySubject").textContent = subject;
+    document.getElementById("summaryEmail").textContent = email;
+    document.getElementById("summaryTime").textContent = time;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('summaryModal'));
+    modal.show();
 
   } catch (error) {
     console.error("Error:", error);
