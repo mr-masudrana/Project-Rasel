@@ -45,7 +45,7 @@ window.signIn = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    if (!user.email.endsWith(".com")) {
+    if (!user.email.endsWith(".edu")) {
       alert("Please login with your university (.edu) email");
       return;
     }
@@ -61,11 +61,18 @@ window.signIn = async () => {
 };
 
 // Logout
-window.logout = () => signOut(auth);
+window.logout = () => {
+  signOut(auth).then(() => {
+    formSection.style.display = "none";
+    loginSection.style.display = "block";
+    logoutBtn.classList.add("d-none");
+    userEmailInput.value = "";
+  });
+};
 
 // On Auth State Changed
 onAuthStateChanged(auth, (user) => {
-  if (user && user.email.endsWith(".com")) {
+  if (user && user.email.endsWith(".edu")) {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
