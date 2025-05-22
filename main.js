@@ -21,7 +21,7 @@ const firebaseConfig = {
   authDomain: "ourschoolapi.firebaseapp.com",
   databaseURL: "https://ourschoolapi-default-rtdb.firebaseio.com",
   projectId: "ourschoolapi",
-  storageBucket: "ourschoolapi.firebasestorage.app",
+  storageBucket: "ourschoolapi.appspot.com",
   messagingSenderId: "918668802617",
   appId: "1:918668802617:web:b1f339f1a59a5c92666be8"
 };
@@ -45,8 +45,9 @@ window.signIn = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    if (!user.email.endsWith(".com")) {
+    if (!user.email.endsWith(".edu")) {
       alert("Please login with your university (.edu) email");
+      await signOut(auth);
       return;
     }
 
@@ -72,11 +73,11 @@ window.logout = () => {
 
 // On Auth State Changed
 onAuthStateChanged(auth, (user) => {
-  if (user && user.email.endsWith(".com")) {
+  if (user && user.email.endsWith(".edu")) {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
-    logoutBtn.style.display = "block";
+    logoutBtn.classList.remove("d-none");
   }
 });
 
@@ -92,12 +93,7 @@ attendanceForm.addEventListener("submit", async (e) => {
   const email = auth.currentUser.email;
   const uid = auth.currentUser.uid;
 
-  if (!subject) {
-    alert("Please select a subject.");
-    return;
-  }
-
-  if (!name || !roll || !batch || !program) {
+  if (!subject || !name || !roll || !batch || !program) {
     alert("Please fill in all required fields.");
     return;
   }
@@ -109,26 +105,16 @@ attendanceForm.addEventListener("submit", async (e) => {
 
   try {
     const snapshot = await get(attendanceRef);
-
     if (snapshot.exists()) {
       alert("You have already submitted attendance for today.");
       return;
     }
 
     await set(attendanceRef, {
-      name,
-      roll,
-      batch,
-      program,
-      email,
-      timestamp: now.toISOString(),
-      time
+      name, roll, batch, program, email, timestamp: now.toISOString(), time
     });
 
-    attendanceForm.reset();
-    userEmailInput.value = email;
-
-    // Fill modal summary
+    // Show Modal with summary
     document.getElementById("summaryName").textContent = name;
     document.getElementById("summaryRoll").textContent = roll;
     document.getElementById("summaryBatch").textContent = batch;
@@ -137,12 +123,12 @@ attendanceForm.addEventListener("submit", async (e) => {
     document.getElementById("summaryEmail").textContent = email;
     document.getElementById("summaryTime").textContent = time;
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('summaryModal'));
-    modal.show();
+    attendanceForm.reset();
+    userEmailInput.value = email;
 
+    new bootstrap.Modal(document.getElementById("summaryModal")).show();
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error submitting attendance:", error);
     alert("Failed to submit attendance. Please try again.");
   }
 });
