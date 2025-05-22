@@ -33,6 +33,7 @@ const db = getDatabase(app);
 // DOM Elements
 const loginSection = document.getElementById("loginSection");
 const formSection = document.getElementById("formSection");
+const logout = document.getElementById("logout");
 const attendanceForm = document.getElementById("attendanceForm");
 const userEmailInput = document.getElementById("userEmail");
 
@@ -43,7 +44,7 @@ window.signIn = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    if (!user.email.endsWith(".com")) {
+    if (!user.email.endsWith(".edu")) {
       alert("Please login with your university (.edu) email");
       return;
     }
@@ -51,15 +52,19 @@ window.signIn = async () => {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
+    logout.style.display = "block";
   } catch (error) {
     console.error("Sign-in error:", error.message);
     alert("Login failed. Try again.");
   }
 };
 
+// Sign-out 
+window.logout = () => signOut(auth);
+
 // On Auth State Change
 onAuthStateChanged(auth, (user) => {
-  if (user && user.email.endsWith(".com")) {
+  if (user && user.email.endsWith(".edu")) {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
@@ -89,10 +94,8 @@ attendanceForm.addEventListener("submit", async (e) => {
   }
 
   const now = new Date();
-  const bstOffset = 6 * 60; // +6 hours in minutes
-  const localTime = new Date(now.getTime() + bstOffset * 60000);
-  const today = localTime.toISOString().split("T")[0];
-  const time = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const today = now.toISOString().split("T")[0];
+  const time = now.toLocaleTimeString();
   const attendanceRef = ref(db, `attendance/${subject}/${today}/${uid}`);
 
   try {
