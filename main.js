@@ -53,7 +53,7 @@ window.signIn = async () => {
     userEmailInput.value = user.email;
     loginSection.style.display = "none";
     formSection.style.display = "block";
-    logoutBtn.style.display = "block";
+    logoutBtn.classList.remove("d-none");
   } catch (error) {
     console.error("Sign-in error:", error.message);
     alert("Login failed. Try again.");
