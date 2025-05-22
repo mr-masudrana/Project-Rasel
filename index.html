@@ -1,94 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Class Attendance</title>
-  <link href="https://fonts.googleapis.com/css2?family=Trirong" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Trirong" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     body {
       font-family: "Trirong", serif;
     }
+    #successMsg {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  
-  <nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand text-uppercase" href="#">
-        <img src="https://www.w3schools.com/bootstrap5/img_avatar1.png" alt="" width="40" class="rounded-pill"> World Univercity
-      </a>
-      <button id="logout" onclick="logout()" class="btn btn-danger" style="display:none;"><i class="fa fa-sign-out"></i></button>
-    </div>
-  </nav>
-  
-  
-  <h1 class="text-center text-success mb-4">Student Attendance Form</h1>
+  <div class="container">
+    <nav class="navbar navbar-light bg-light">
+      <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand text-uppercase" href="#">
+          <img src="https://www.w3schools.com/bootstrap5/img_avatar1.png" alt="" width="40" class="rounded-pill" />
+          World University
+        </a>
+        <button id="logout" onclick="logout()" class="btn btn-danger d-none">
+          <i class="fa fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </nav>
 
-  <!-- Login Section -->
-  <div id="loginSection" class="text-center">
-    <button class="btn btn-primary" onclick="signIn()">Login with University Email</button>
+    <div class="row mt-4">
+      <h1 class="text-center text-success mb-4">Student Attendance Form</h1>
+    </div>
+
+    <!-- Login Section -->
+    <div class="row justify-content-center" id="loginSection">
+      <button class="btn btn-primary w-auto" onclick="signIn()">Login with University Email</button>
+    </div>
+
+    <!-- Form Section -->
+    <div class="row" id="formSection" style="display: none;">
+      <div class="card p-4 shadow mx-auto" style="max-width: 768px;">
+        <form id="attendanceForm">
+          <div class="mb-3">
+            <label for="subject" class="form-label">Select Subject:</label>
+            <select id="subject" class="form-select" required>
+              <option value="">-- Select Subject --</option>
+              <option value="EngineeringDynamics">Engineering Dynamics</option>
+              <option value="Thermodynamics">Thermodynamics</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Physics">Physics</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="userEmail" class="form-label">Email:</label>
+            <input type="email" id="userEmail" class="form-control" readonly />
+          </div>
+
+          <div class="mb-3">
+            <label for="name" class="form-label">Full Name:</label>
+            <input type="text" id="name" class="form-control" placeholder="Enter full name" required />
+          </div>
+
+          <div class="mb-3">
+            <label for="roll" class="form-label">Roll No:</label>
+            <input type="text" id="roll" class="form-control" placeholder="Enter roll number" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Batch:</label><br />
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="batch" value="04B" id="batch04B" checked />
+              <label class="form-check-label" for="batch04B">04B</label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Program:</label><br />
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="program" value="ME" id="programME" checked />
+              <label class="form-check-label" for="programME">ME</label>
+            </div>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Submit Attendance</button>
+          </div>
+        </form>
+        <div id="successMsg" class="alert alert-success mt-3">Attendance submitted successfully!</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Form Section (Hidden Initially) -->
-  <div id="formSection" style="display:none;">
-    <div class="card p-4 shadow mx-auto" style="max-width: 768px;">
-      <form id="attendanceForm">
-        <div class="mb-3">
-          <label for="subject" class="form-label">Select Subject:</label>
-          <select id="subject" class="form-select" required>
-            <option value="">-- Select Subject --</option>
-            <option value="EngineeringDynamics">Engineering Dynamics</option>
-            <option value="Thermodynamics">Thermodynamics</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Physics">Physics</option>
-          </select>
-        </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithPopup,
+      signOut,
+      GoogleAuthProvider,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      set
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-        <div class="mb-3">
-          <label for="userEmail" class="form-label">Email:</label>
-          <input type="email" id="userEmail" class="form-control" readonly>
-        </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQd-8YJ2bq19rWQHb5GcHUTY2pYb3ifdo",
+      authDomain: "ourschoolapi.firebaseapp.com",
+      databaseURL: "https://ourschoolapi-default-rtdb.firebaseio.com",
+      projectId: "ourschoolapi",
+      storageBucket: "ourschoolapi.firebasestorage.app",
+      messagingSenderId: "918668802617",
+      appId: "1:918668802617:web:b1f339f1a59a5c92666be8"
+    };
 
-        <div class="mb-3">
-          <label for="name" class="form-label">Full Name:</label>
-          <input type="text" id="name" class="form-control" placeholder="Enter full name" required>
-        </div>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-        <div class="mb-3">
-          <label for="roll" class="form-label">Roll No:</label>
-          <input type="text" id="roll" class="form-control" placeholder="Enter roll number" required>
-        </div>
+    const loginSection = document.getElementById("loginSection");
+    const formSection = document.getElementById("formSection");
+    const logoutBtn = document.getElementById("logout");
+    const attendanceForm = document.getElementById("attendanceForm");
+    const userEmailInput = document.getElementById("userEmail");
 
-        <div class="mb-3">
-          <label class="form-label">Batch:</label><br>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="batch" value="04B" id="batch04B" checked>
-            <label class="form-check-label" for="batch04B">04B</label>
-          </div>
-        </div>
+    window.signIn = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-        <div class="mb-3">
-          <label class="form-label">Program:</label><br>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="program" value="ME" id="programME" checked>
-            <label class="form-check-label" for="programME">ME</label>
-          </div>
-        </div>
+        if (!user.email.endsWith(".edu")) {
+          alert("Please login with your university (.edu) email.");
+          await signOut(auth);
+          return;
+        }
 
-        <div class="text-end">
-          <button type="submit" class="btn btn-success">Submit Attendance</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  
-  
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-  <script type="module" src="main.js"></script>
+        userEmailInput.value = user.email;
+        loginSection.style.display = "none";
+        formSection.style.display = "block";
+        logoutBtn.classList.remove("d-none");
+      } catch (error) {
+        console.error("Sign-in error:", error.message);
+        alert("Login failed. Try again.");
+      }
+    };
+
+    window.logout = () => {
+      signOut(auth).then(() => {
+        formSection.style.display = "none";
+        loginSection.style.display = "block";
+        logoutBtn.classList.add("d-none");
+        userEmailInput.value = "";
+      });
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.email.endsWith(".edu")) {
+        userEmailInput.value = user.email;
+        loginSection.style.display = "none";
+        formSection.style.display = "block";
+        logoutBtn.classList.remove("d-none");
+      } else {
+        loginSection.style.display = "block";
+        formSection.style.display = "none";
+        logoutBtn.classList.add("d-none");
+      }
+    });
+
+    attendanceForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const roll = document.getElementById("roll").value.trim();
+      const batch = document.querySelector('input[name="batch"]:checked')?.value;
+      const program = document.querySelector('input[name="program"]:checked')?.value;
+      const subject = document.getElementById("subject").value;
+      const email = auth.currentUser.email;
+      const uid = auth.currentUser.uid;
+
+      if (!subject || !name || !roll || !batch || !program) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+      const time = now.toLocaleTimeString();
+      const attendanceRef = ref(db, `attendance/${subject}/${today}/${uid}`);
+
+      try {
+        const snapshot = await get(attendanceRef);
+        if (snapshot.exists()) {
+          alert("You have already submitted attendance for today.");
+          return;
+        }
+
+        await set(attendanceRef, {
+          name,
+          roll,
+          batch,
+          program,
+          email,
+          timestamp: now.toISOString(),
+          time
+        });
+
+        attendanceForm.reset();
+        userEmailInput.value = email;
+        document.getElementById("successMsg").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("successMsg").style.display = "none";
+        }, 5000);
+      } catch (error) {
+        console.error("Error submitting attendance:", error);
+        alert("Failed to submit attendance. Please try again.");
+      }
+    });
+  </script>
 </body>
 </html>
