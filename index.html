@@ -25,7 +25,7 @@
           World University
         </a>
         <button id="logout" onclick="logout()" class="btn btn-danger d-none">
-          <i class="fa fa-sign-out-alt"></i> Logout
+          <i class="fa fa-sign-out-alt"></i>
         </button>
       </div>
     </nav>
@@ -42,6 +42,7 @@
     <!-- Form Section -->
     <div class="row" id="formSection" style="display: none;">
       <div class="card p-4 shadow mx-auto" style="max-width: 768px;">
+        <div id="successMsg" class="alert alert-success mt-3">Attendance submitted successfully!</div>
         <form id="attendanceForm">
           <div class="mb-3">
             <label for="subject" class="form-label">Select Subject:</label>
@@ -89,7 +90,6 @@
             <button type="submit" class="btn btn-success">Submit Attendance</button>
           </div>
         </form>
-        <div id="successMsg" class="alert alert-success mt-3">Attendance submitted successfully!</div>
       </div>
     </div>
   </div>
@@ -217,7 +217,7 @@
         document.getElementById("successMsg").style.display = "block";
         setTimeout(() => {
           document.getElementById("successMsg").style.display = "none";
-        }, 5000);
+        }, 10000);
       } catch (error) {
         console.error("Error submitting attendance:", error);
         alert("Failed to submit attendance. Please try again.");
