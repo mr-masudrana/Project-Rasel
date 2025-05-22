@@ -1,6 +1,6 @@
-// admin - main.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCQd-8YJ2bq19rWQHb5GcHUTY2pYb3ifdo",
@@ -14,6 +14,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+
+const allowedTeachers = [
+  "masudrana@gmail.com",
+  "teacher2@example.com"
+];
 
 const subjectSelect = document.getElementById("subjectSelect");
 const datePicker = document.getElementById("datePicker");
@@ -21,6 +27,9 @@ const attendanceTable = document.getElementById("attendanceTable");
 const downloadCSVBtn = document.getElementById("downloadCSV");
 const downloadPDFBtn = document.getElementById("downloadPDF");
 const downloadExcelBtn = document.getElementById("downloadExcel");
+const loginSection = document.getElementById("loginSection");
+const dataSection = document.getElementById("dataSection");
+const logoutBtn = document.getElementById("logout");
 
 let currentData = [];
 
@@ -40,7 +49,7 @@ function loadAttendance() {
     if (snapshot.exists()) {
       const data = Object.values(snapshot.val());
       data.forEach((entry, index) => {
-        const row = `
+        attendanceTable.innerHTML += `
           <tr>
             <td>${index + 1}</td>
             <td>${entry.name}</td>
@@ -51,8 +60,6 @@ function loadAttendance() {
             <td>${entry.time}</td>
           </tr>
         `;
-        attendanceTable.innerHTML += row;
-
         currentData.push({
           SL: index + 1,
           Name: entry.name,
@@ -69,63 +76,79 @@ function loadAttendance() {
   });
 }
 
-// CSV Download
-downloadCSVBtn.addEventListener("click", () => {
-  if (currentData.length === 0) {
-    alert("No data to download.");
-    return;
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    if (allowedTeachers.includes(user.email)) {
+      loginSection.style.display = "none";
+      dataSection.style.display = "block";
+      logoutBtn.classList.remove("d-none");
+      bootstrap.Modal.getInstance(document.getElementById("loginModal")).hide();
+    } else {
+      alert("You are not an admin.");
+      await signOut(auth);
+    }
+  } catch (error) {
+    alert("Login failed: " + error.message);
   }
+});
 
+logoutBtn.addEventListener("click", () => {
+  signOut(auth).then(() => {
+    loginSection.style.display = "block";
+    dataSection.style.display = "none";
+    logoutBtn.classList.add("d-none");
+  });
+});
+
+onAuthStateChanged(auth, (user) => {
+  if (user && allowedTeachers.includes(user.email)) {
+    loginSection.style.display = "none";
+    dataSection.style.display = "block";
+    logoutBtn.classList.remove("d-none");
+  }
+});
+
+downloadCSVBtn.addEventListener("click", () => {
+  if (!currentData.length) return alert("No data to download.");
   const headers = Object.keys(currentData[0]);
-  const csvRows = [
+  const csv = [
     headers.join(","),
-    ...currentData.map(row =>
-      headers.map(field => `"${row[field] || ''}"`).join(",")
-    )
-  ];
-  const csvData = csvRows.join("\n");
-  const blob = new Blob([csvData], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
+    ...currentData.map(row => headers.map(h => `"${row[h] || ""}"`).join(","))
+  ].join("\n");
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `Attendance_${subjectSelect.value}_${datePicker.value}.csv`;
-  link.click();
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Attendance_${subjectSelect.value}_${datePicker.value}.csv`;
+  a.click();
   URL.revokeObjectURL(url);
 });
 
-// PDF Download
 downloadPDFBtn.addEventListener("click", () => {
-  if (currentData.length === 0) {
-    alert("No data to download.");
-    return;
-  }
-
+  if (!currentData.length) return alert("No data to download.");
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-
   doc.text(`Attendance Report - ${subjectSelect.value} - ${datePicker.value}`, 14, 14);
   doc.autoTable({
     head: [["SL", "Name", "Roll", "Batch", "Program", "Email", "Time"]],
-    body: currentData.map(row => [
-      row.SL, row.Name, row.Roll, row.Batch, row.Program, row.Email, row.Time
-    ]),
+    body: currentData.map(row => [row.SL, row.Name, row.Roll, row.Batch, row.Program, row.Email, row.Time]),
     startY: 20
   });
-
   doc.save(`Attendance_${subjectSelect.value}_${datePicker.value}.pdf`);
 });
 
-// Excel Download
 downloadExcelBtn.addEventListener("click", () => {
-  if (currentData.length === 0) {
-    alert("No data to download.");
-    return;
-  }
-
+  if (!currentData.length) return alert("No data to download.");
   const ws = XLSX.utils.json_to_sheet(currentData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-
   XLSX.writeFile(wb, `Attendance_${subjectSelect.value}_${datePicker.value}.xlsx`);
 });
