@@ -37,6 +37,9 @@ const formSection = document.getElementById("formSection");
 const logoutBtn = document.getElementById("logout");
 const attendanceForm = document.getElementById("attendanceForm");
 const userEmailInput = document.getElementById("userEmail");
+const submitBtn = document.getElementById("submitBtn");
+const btnText = document.getElementById("btnText");
+const spinner = document.getElementById("spinner");
 
 // Google Sign-In
 window.signIn = async () => {
@@ -84,16 +87,18 @@ onAuthStateChanged(auth, (user) => {
 // Attendance Form Submission
 attendanceForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  showLoading();
 
   const name = document.getElementById("name").value.trim();
   const roll = document.getElementById("roll").value.trim();
   const batch = document.querySelector('input[name="batch"]:checked')?.value;
   const program = document.querySelector('input[name="program"]:checked')?.value;
   const subject = document.getElementById("subject").value;
-  const email = auth.currentUser.email;
-  const uid = auth.currentUser.uid;
+  const email = auth.currentUser?.email;
+  const uid = auth.currentUser?.uid;
 
   if (!subject || !name || !roll || !batch || !program) {
+    hideLoading();
     alert("Please fill in all required fields.");
     return;
   }
@@ -106,6 +111,7 @@ attendanceForm.addEventListener("submit", async (e) => {
   try {
     const snapshot = await get(attendanceRef);
     if (snapshot.exists()) {
+      hideLoading();
       alert("You have already submitted attendance for today.");
       return;
     }
@@ -114,7 +120,7 @@ attendanceForm.addEventListener("submit", async (e) => {
       name, roll, batch, program, email, timestamp: now.toISOString(), time
     });
 
-    // Show Modal with summary
+    // Show Summary Modal
     document.getElementById("summaryName").textContent = name;
     document.getElementById("summaryRoll").textContent = roll;
     document.getElementById("summaryBatch").textContent = batch;
@@ -125,10 +131,36 @@ attendanceForm.addEventListener("submit", async (e) => {
 
     attendanceForm.reset();
     userEmailInput.value = email;
-
+    hideLoading();
     new bootstrap.Modal(document.getElementById("summaryModal")).show();
   } catch (error) {
+    hideLoading();
     console.error("Error submitting attendance:", error);
     alert("Failed to submit attendance. Please try again.");
   }
+});
+
+// Show loading spinner
+function showLoading() {
+  spinner.classList.remove("d-none");
+  btnText.textContent = "Submitting...";
+}
+
+// Hide loading spinner
+function hideLoading() {
+  spinner.classList.add("d-none");
+  btnText.textContent = "Submit";
+}
+
+// Typed.js Heading Animation
+document.addEventListener("DOMContentLoaded", () => {
+  new Typed("#typedHeading", {
+    strings: ["World University of Bangladesh"],
+    typeSpeed: 100,
+    backSpeed: 30,
+    backDelay: 2000,
+    loop: true,
+    showCursor: true,
+    cursorChar: "|"
+  });
 });
