@@ -1,7 +1,17 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  get
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCQd-8YJ2bq19rWQHb5GcHUTY2pYb3ifdo",
   authDomain: "ourschoolapi.firebaseapp.com",
@@ -12,27 +22,94 @@ const firebaseConfig = {
   appId: "1:918668802617:web:b1f339f1a59a5c92666be8"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 const auth = getAuth(app);
+const database = getDatabase(app);
 
-const allowedTeachers = [
-  "masudrana@gmail.com",
-  "teacher2@example.com"
-];
-
+// DOM elements
+const loginForm = document.getElementById("loginForm");
+const loginBtn = document.getElementById("loginBtn");
+const btnText = document.getElementById("btnText");
+const spinner = document.getElementById("spinner");
+const loginSection = document.getElementById("loginSection");
+const logoutBtn = document.getElementById("logout");
+const dataSection = document.getElementById("dataSection");
 const subjectSelect = document.getElementById("subjectSelect");
 const datePicker = document.getElementById("datePicker");
 const attendanceTable = document.getElementById("attendanceTable");
-const downloadCSVBtn = document.getElementById("downloadCSV");
-const downloadPDFBtn = document.getElementById("downloadPDF");
-const downloadExcelBtn = document.getElementById("downloadExcel");
-const loginSection = document.getElementById("loginSection");
-const dataSection = document.getElementById("dataSection");
-const logoutBtn = document.getElementById("logout");
 
 let currentData = [];
 
+// Login
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  showLoading();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!email.endsWith(".com")) {
+    hideLoading();
+    alert("Login restricted to Admin accounts only!");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    hideLoading();
+    bootstrap.Modal.getInstance(document.getElementById("loginModal")).hide();
+  } catch (error) {
+    hideLoading();
+    alert("Login failed: " + error.message);
+  }
+});
+
+// Auth state change
+onAuthStateChanged(auth, (user) => {
+  if (user && user.email.endsWith(".com")) {
+    loginSection.style.display = "none";
+    dataSection.style.display = "block";
+    logoutBtn.classList.remove("d-none");
+  } else {
+    loginSection.style.display = "block";
+    dataSection.style.display = "none";
+    logoutBtn.classList.add("d-none");
+  }
+});
+
+// Logout
+logoutBtn.addEventListener("click", () => {
+  signOut(auth).catch((error) => {
+    alert("Logout error: " + error.message);
+  });
+});
+
+// Show loading spinner
+function showLoading() {
+  spinner.classList.remove("d-none");
+  btnText.textContent = "Logging in...";
+}
+
+// Hide loading spinner
+function hideLoading() {
+  spinner.classList.add("d-none");
+  btnText.textContent = "Login";
+}
+
+// Typed.js Heading Animation
+document.addEventListener("DOMContentLoaded", () => {
+  new Typed("#typedHeading", {
+    strings: ["World University of Bangladesh"],
+    typeSpeed: 100,
+    backSpeed: 25,
+    backDelay: 2000,
+    loop: true,
+    showCursor: true,
+    cursorChar: "|"
+  });
+});
+
+// Load attendance data
 subjectSelect.addEventListener("change", loadAttendance);
 datePicker.addEventListener("change", loadAttendance);
 
@@ -41,7 +118,7 @@ function loadAttendance() {
   const date = datePicker.value;
   if (!subject || !date) return;
 
-  const attendanceRef = ref(db, `attendance/${subject}/${date}`);
+  const attendanceRef = ref(database, `attendance/${subject}/${date}`);
   get(attendanceRef).then(snapshot => {
     attendanceTable.innerHTML = "";
     currentData = [];
@@ -73,82 +150,36 @@ function loadAttendance() {
     } else {
       attendanceTable.innerHTML = `<tr><td colspan="7" class="text-center text-danger">No attendance found.</td></tr>`;
     }
+  }).catch(err => {
+    console.error(err);
+    alert("Error loading attendance data.");
   });
 }
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    if (allowedTeachers.includes(user.email)) {
-      loginSection.style.display = "none";
-      dataSection.style.display = "block";
-      logoutBtn.classList.remove("d-none");
-      bootstrap.Modal.getInstance(document.getElementById("loginModal")).hide();
-    } else {
-      alert("You are not an admin.");
-      await signOut(auth);
-    }
-  } catch (error) {
-    alert("Login failed: " + error.message);
-  }
-});
-
-logoutBtn.addEventListener("click", () => {
-  signOut(auth).then(() => {
-    loginSection.style.display = "block";
-    dataSection.style.display = "none";
-    logoutBtn.classList.add("d-none");
-  });
-});
-
-onAuthStateChanged(auth, (user) => {
-  if (user && allowedTeachers.includes(user.email)) {
-    loginSection.style.display = "none";
-    dataSection.style.display = "block";
-    logoutBtn.classList.remove("d-none");
-  }
-});
-
-downloadCSVBtn.addEventListener("click", () => {
-  if (!currentData.length) return alert("No data to download.");
-  const headers = Object.keys(currentData[0]);
-  const csv = [
-    headers.join(","),
-    ...currentData.map(row => headers.map(h => `"${row[h] || ""}"`).join(","))
-  ].join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Attendance_${subjectSelect.value}_${datePicker.value}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-downloadPDFBtn.addEventListener("click", () => {
-  if (!currentData.length) return alert("No data to download.");
+// Export PDF
+document.getElementById("downloadPDF").addEventListener("click", () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  doc.text(`Attendance Report - ${subjectSelect.value} - ${datePicker.value}`, 14, 14);
+  doc.text("Attendance Data", 14, 16);
   doc.autoTable({
-    head: [["SL", "Name", "Roll", "Batch", "Program", "Email", "Time"]],
-    body: currentData.map(row => [row.SL, row.Name, row.Roll, row.Batch, row.Program, row.Email, row.Time]),
-    startY: 20
+    html: "#attendanceData",
+    startY: 20,
+    headStyles: { fillColor: [40, 167, 69] },
+    theme: "grid"
   });
-  doc.save(`Attendance_${subjectSelect.value}_${datePicker.value}.pdf`);
+  doc.save("attendance.pdf");
 });
 
-downloadExcelBtn.addEventListener("click", () => {
-  if (!currentData.length) return alert("No data to download.");
-  const ws = XLSX.utils.json_to_sheet(currentData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-  XLSX.writeFile(wb, `Attendance_${subjectSelect.value}_${datePicker.value}.xlsx`);
+// Export Excel
+document.getElementById("downloadExcel").addEventListener("click", () => {
+  const table = document.getElementById("attendanceData");
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
+  XLSX.writeFile(wb, "attendance.xlsx");
+});
+
+// Export CSV
+document.getElementById("downloadCSV").addEventListener("click", () => {
+  const table = document.getElementById("attendanceData");
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
+  XLSX.writeFile(wb, "attendance.csv");
 });
